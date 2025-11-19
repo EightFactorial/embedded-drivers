@@ -1,10 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
-use bitflags::bitflags;
+use core::marker::PhantomData;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
+use bitflags::bitflags;
 
 #[cfg(feature = "async")]
 mod r#async;
@@ -12,17 +11,20 @@ mod blocking;
 mod register;
 
 /// A driver for a GT911 touch sensor.
-pub struct GT911<I2C> {
+pub struct GT911<I2C, MODE = Touch> {
     i2c: I2C,
     address: u8,
+    _mode: PhantomData<MODE>,
 }
 
-impl<I2C> GT911<I2C> {
-    /// Create a new [`GT911`] driver.
+impl<I2C> GT911<I2C, Touch> {
+    /// Create a new [`GT911`] driver in touch mode.
     #[inline]
     #[must_use]
-    pub const fn new(i2c: I2C, address: u8) -> Self { GT911 { i2c, address } }
+    pub const fn new(i2c: I2C, address: u8) -> Self { Self { i2c, address, _mode: PhantomData } }
+}
 
+impl<I2C, MODE> GT911<I2C, MODE> {
     /// Get the I2C address of the GT911 device.
     #[inline]
     #[must_use]
@@ -44,21 +46,48 @@ impl<I2C> GT911<I2C> {
     pub fn release(self) -> I2C { self.i2c }
 }
 
+/// A marker struct for touch mode.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Touch;
+impl GT911Mode for Touch {
+    const CLEAR_REGISTER: u16 = register::GT911_STATUS;
+}
+
+/// A marker struct for gesture mode.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Gesture;
+impl GT911Mode for Gesture {
+    const CLEAR_REGISTER: u16 = register::GT911_GESTURE_STATUS;
+}
+
+/// A marker trait for GT911 operating modes.
+pub trait GT911Mode: sealed::Sealed {
+    /// The register to clear when exiting command mode.
+    const CLEAR_REGISTER: u16;
+}
+mod sealed {
+    pub trait Sealed {}
+    impl Sealed for super::Touch {}
+    impl Sealed for super::Gesture {}
+}
+
+// -------------------------------------------------------------------------------------------------
+
 /// An error that can occur when using the GT911 driver.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum GT911Error<E> {
     /// The device is not ready.
     DeviceNotReady,
-    /// An invalid touch point was requested.
+    /// An invalid touch or gesture point was requested.
     InvalidPoint(u8),
     /// Unexpected product ID.
     ProductIdMismatch([u8; 4], u16),
     /// I2C bus error.
     I2C(E),
 }
-
-// -------------------------------------------------------------------------------------------------
 
 /// A touch point reported by the GT911.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,4 +159,68 @@ impl GT911Status {
     #[inline]
     #[must_use]
     pub const fn is_triggered(self) -> bool { self.contains(GT911Status::PROXIMITY_MASK) }
+}
+
+/// A gesture detected by the GT911.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum DetectedGesture {
+    /// No gesture detected.
+    None = 0x00,
+    /// A character-shaped gesture.
+    Char(char) = 0x01,
+    /// A swipe to the right.
+    SwipeRight = 0xAA,
+    /// A swipe to the left.
+    SwipeLeft = 0xBB,
+    /// A swipe down.
+    SwipeDown = 0xAB,
+    /// A swipe up.
+    SwipeUp = 0xBA,
+    /// A double tap.
+    DoubleTap = 0xCC,
+}
+
+impl DetectedGesture {
+    /// Returns `true` if any gesture is detected.
+    #[inline]
+    #[must_use]
+    pub const fn is_any(self) -> bool { !matches!(self, DetectedGesture::None) }
+
+    /// Create a `DetectedGesture` from a raw byte.
+    #[must_use]
+    pub const fn from_byte(byte: u8) -> Self {
+        match byte {
+            0x27..=0x7F => DetectedGesture::Char(byte as char),
+            0xAA => DetectedGesture::SwipeRight,
+            0xBB => DetectedGesture::SwipeLeft,
+            0xAB => DetectedGesture::SwipeDown,
+            0xBA => DetectedGesture::SwipeUp,
+            0xCC => DetectedGesture::DoubleTap,
+            _ => DetectedGesture::None,
+        }
+    }
+}
+
+/// A gesture point reported by the GT911
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct GesturePoint {
+    /// The X coordinate
+    pub x: u16,
+    /// The Y coordinate
+    pub y: u16,
+}
+
+impl GesturePoint {
+    /// Create a gesture point from raw data.
+    #[inline]
+    #[must_use]
+    pub const fn from_bytes(data: [u8; 4]) -> Self {
+        Self {
+            x: u16::from_le_bytes([data[0], data[1]]),
+            y: u16::from_le_bytes([data[2], data[3]]),
+        }
+    }
 }

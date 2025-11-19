@@ -5,7 +5,7 @@ changelog path="CHANGELOG.md":
 # Run the clippy linter
 clippy:
     cargo clippy --workspace --no-default-features -- -D warnings
-    cargo clippy --workspace --features=alloc,defmt -- -D warnings
+    cargo clippy --workspace --features=defmt -- -D warnings
     cargo clippy --workspace --features=async,defmt -- -D warnings
 
 # Build the project
@@ -19,7 +19,7 @@ deny:
 # Run all workspace tests
 test:
     cargo test --workspace --no-default-features
-    cargo test --workspace --features=alloc,defmt
+    cargo test --workspace --features=defmt
     cargo test --workspace --features=async,defmt
 
 # Check all files for typos
