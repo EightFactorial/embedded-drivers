@@ -5,7 +5,6 @@ use core::marker::PhantomData;
 
 use bitflags::bitflags;
 
-#[cfg(feature = "async")]
 mod r#async;
 mod blocking;
 mod register;
@@ -117,9 +116,9 @@ impl TouchPoint {
 }
 
 bitflags! {
-    /// The status of the GT911 device.
+    /// Flags representing the current touch status.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct GT911Status: u8 {
+    pub struct DetectedTouch: u8 {
         /// Whether the device is ready.
         const READY_MASK = 0b1000_0000;
         /// Whether a large touch is detected.
@@ -134,31 +133,31 @@ bitflags! {
 
 }
 
-impl GT911Status {
+impl DetectedTouch {
     /// Returns `true` if the device is ready.
     #[inline]
     #[must_use]
-    pub const fn is_ready(self) -> bool { self.contains(GT911Status::READY_MASK) }
+    pub const fn is_ready(self) -> bool { self.contains(DetectedTouch::READY_MASK) }
 
     /// Returns the number of touch points currently detected.
     #[inline]
     #[must_use]
-    pub const fn touch_count(self) -> u8 { self.bits() & GT911Status::TOUCH_POINT_MASK.bits() }
+    pub const fn touch_count(self) -> u8 { self.bits() & DetectedTouch::TOUCH_POINT_MASK.bits() }
 
     /// Returns `true` if the device is being touched.
     #[inline]
     #[must_use]
-    pub const fn is_touched(self) -> bool { self.contains(GT911Status::TOUCH_MASK) }
+    pub const fn is_touched(self) -> bool { self.contains(DetectedTouch::TOUCH_MASK) }
 
     /// Returns `true` if a large touch has been detected.
     #[inline]
     #[must_use]
-    pub const fn is_large_touched(self) -> bool { self.contains(GT911Status::LARGE_TOUCH_MASK) }
+    pub const fn is_large_touched(self) -> bool { self.contains(DetectedTouch::LARGE_TOUCH_MASK) }
 
     /// Returns `true` if the proximity sensor has been triggered.
     #[inline]
     #[must_use]
-    pub const fn is_triggered(self) -> bool { self.contains(GT911Status::PROXIMITY_MASK) }
+    pub const fn is_triggered(self) -> bool { self.contains(DetectedTouch::PROXIMITY_MASK) }
 }
 
 /// A gesture detected by the GT911.

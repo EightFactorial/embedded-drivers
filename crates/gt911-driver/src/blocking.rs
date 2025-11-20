@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use embedded_hal::i2c::I2c;
 
 use crate::{
-    DetectedGesture, GT911, GT911Error, GT911Mode, GT911Status, Gesture, GesturePoint, Touch,
+    DetectedGesture, DetectedTouch, GT911, GT911Error, GT911Mode, Gesture, GesturePoint, Touch,
     TouchPoint, register,
 };
 
@@ -50,20 +50,6 @@ impl<I2C: I2c, MODE: GT911Mode> GT911<I2C, MODE> {
         })
     }
 
-    /// Query the device's status.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any I2C operation fails.
-    pub fn device_status(&mut self) -> Result<GT911Status, GT911Error<I2C::Error>> {
-        command_mode!(self, MODE, {
-            // Query the status register
-            let mut status = [0u8; 1];
-            self.read_register(register::GT911_STATUS, &mut status)?;
-            Ok(GT911Status::from_bits_truncate(status[0]))
-        })
-    }
-
     /// Read from a register.
     ///
     /// # Errors
@@ -96,7 +82,7 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     /// Returns an error if the device is not ready, if the product ID does not
     /// match, or if any I2C operation fails.
     pub fn init(&mut self) -> Result<(), GT911Error<I2C::Error>> {
-        if !self.device_status()?.is_ready() {
+        if !self.query_touch_status()?.is_ready() {
             // Return that the device is not ready
             return Err(GT911Error::DeviceNotReady);
         }
@@ -117,6 +103,20 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     /// Returns an error if any I2C operation fails.
     pub fn device_reset(&mut self) -> Result<(), GT911Error<I2C::Error>> { todo!() }
 
+    /// Query the device's touch status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any I2C operation fails.
+    pub fn query_touch_status(&mut self) -> Result<DetectedTouch, GT911Error<I2C::Error>> {
+        command_mode!(self, Touch, {
+            // Query the status register
+            let mut status = [0u8; 1];
+            self.read_register(register::GT911_STATUS, &mut status)?;
+            Ok(DetectedTouch::from_bits_truncate(status[0]))
+        })
+    }
+
     /// Query the number of active touch points.
     ///
     /// # Errors
@@ -124,7 +124,7 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     /// Returns an error if any I2C operation fails.
     #[inline]
     pub fn query_touch_count(&mut self) -> Result<u8, GT911Error<I2C::Error>> {
-        self.device_status().map(GT911Status::touch_count)
+        self.query_touch_status().map(DetectedTouch::touch_count)
     }
 
     /// Query a specific touch point's data.
@@ -205,11 +205,6 @@ impl<I2C: I2c> GT911<I2C, Gesture> {
     /// Returns an error if the device is not ready, if the product ID does not
     /// match, or if any I2C operation fails.
     pub fn init(&mut self) -> Result<(), GT911Error<I2C::Error>> {
-        if !self.device_status()?.is_ready() {
-            // Return that the device is not ready
-            return Err(GT911Error::DeviceNotReady);
-        }
-
         let (id, version) = self.device_info()?;
         if id == [b'G', b'E', b'S', b'T'] {
             Ok(())

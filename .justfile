@@ -6,7 +6,6 @@ changelog path="CHANGELOG.md":
 clippy:
     cargo clippy --workspace --no-default-features -- -D warnings
     cargo clippy --workspace --features=defmt -- -D warnings
-    cargo clippy --workspace --features=async,defmt -- -D warnings
 
 # Build the project
 build mode="release":
@@ -20,7 +19,6 @@ deny:
 test:
     cargo test --workspace --no-default-features
     cargo test --workspace --features=defmt
-    cargo test --workspace --features=async,defmt
 
 # Check all files for typos
 typos:

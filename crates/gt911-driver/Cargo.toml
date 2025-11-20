@@ -13,12 +13,10 @@ workspace = true
 defmt = { workspace = true, optional = true }
 bitflags = { workspace = true }
 embedded-hal = { workspace = true }
-embedded-hal-async = { workspace = true, optional = true }
+embedded-hal-async = { workspace = true }
 
 [features]
 default = []
 
-# Enable support for `embedded-hal-async`
-async = ["dep:embedded-hal-async"]
 # Enable support for `defmt`
 defmt = ["dep:defmt"]
