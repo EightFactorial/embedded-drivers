@@ -1,0 +1,24 @@
+[package]
+name = "gc9503-driver"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+bitflags = { workspace = true }
+defmt = { workspace = true, optional = true }
+embedded-graphics-core = { workspace = true, optional = true }
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+
+[features]
+default = []
+
+# Enable support for `defmt`
+defmt = ["dep:defmt"]
+embedded-graphics = ["dep:embedded-graphics-core"]

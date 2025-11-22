@@ -7,6 +7,7 @@ embassy-sync = { default-features = false, version = "0.7.2" }
 embedded-graphics-core = { default-features = false, version = "0.4.0" }
 embedded-hal = { default-features = false, version = "1.0.0" }
 embedded-hal-async = { default-features = false, version = "1.0.0" }
+embassy-embedded-hal = { default-features = false, version = "0.5.0" }
 
 # Other
 bitflags = { default-features = false, version = "2.10.0" }
@@ -32,7 +33,6 @@ missing_docs = "warn"
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 unreachable_pub = "warn"
-unsafe_code = "forbid"
 unused_import_braces = "warn"
 unused_lifetimes = "warn"
 

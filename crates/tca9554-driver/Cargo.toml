@@ -1,0 +1,22 @@
+[package]
+name = "tca9554-driver"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+defmt = { workspace = true, optional = true }
+bitflags = { workspace = true }
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+
+[features]
+default = []
+
+# Enable support for `defmt`
+defmt = ["dep:defmt"]

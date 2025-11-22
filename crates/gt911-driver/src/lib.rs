@@ -3,7 +3,10 @@
 
 use core::marker::PhantomData;
 
+#[cfg(not(feature = "defmt"))]
 use bitflags::bitflags;
+#[cfg(feature = "defmt")]
+use defmt::bitflags;
 
 mod r#async;
 mod blocking;
