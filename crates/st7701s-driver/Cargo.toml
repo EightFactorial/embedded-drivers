@@ -1,5 +1,5 @@
 [package]
-name = "gc9503-driver"
+name = "st7701s-driver"
 edition = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }

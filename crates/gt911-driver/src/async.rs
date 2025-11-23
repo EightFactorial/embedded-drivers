@@ -38,15 +38,20 @@ impl<I2C: I2c, MODE: GT911Mode> GT911<I2C, MODE> {
     ///
     /// Returns an error if any I2C operation fails.
     pub async fn device_info_async(&mut self) -> Result<([u8; 4], u16), GT911Error<I2C::Error>> {
-        command_mode!(self, MODE, {
-            // Query the product ID
-            let mut id = [0u8; 4];
-            self.read_register_async(register::GT911_PRODUCT_ID1, &mut id).await?;
-            // Query the firmware version
-            let mut ver = [0u8; 2];
-            self.read_register_async(register::GT911_FIRMWARE_VER_LSB, &mut ver).await?;
-            Ok((id, u16::from_le_bytes(ver)))
-        })
+        command_mode!(self, MODE, { self.device_info_async_cmd().await })
+    }
+
+    /// Query the device's product ID and firmware version.
+    ///
+    /// Requires the outer function to be in command mode.
+    async fn device_info_async_cmd(&mut self) -> Result<([u8; 4], u16), GT911Error<I2C::Error>> {
+        // Query the product ID
+        let mut id = [0u8; 4];
+        self.read_register_async(register::GT911_PRODUCT_ID1, &mut id).await?;
+        // Query the firmware version
+        let mut ver = [0u8; 2];
+        self.read_register_async(register::GT911_FIRMWARE_VER_LSB, &mut ver).await?;
+        Ok((id, u16::from_le_bytes(ver)))
     }
 
     /// Read from a register asynchronously.
@@ -60,7 +65,7 @@ impl<I2C: I2c, MODE: GT911Mode> GT911<I2C, MODE> {
         buf: &mut [u8],
     ) -> Result<(), GT911Error<I2C::Error>> {
         self.i2c
-            .write_read(self.address, &register.to_le_bytes(), buf)
+            .write_read(self.address, &register.to_be_bytes(), buf)
             .await
             .map_err(GT911Error::I2C)
     }
@@ -75,7 +80,7 @@ impl<I2C: I2c, MODE: GT911Mode> GT911<I2C, MODE> {
         register: u16,
         data: u8,
     ) -> Result<(), GT911Error<I2C::Error>> {
-        let buf = [register.to_le_bytes()[0], register.to_le_bytes()[1], data];
+        let buf = [register.to_be_bytes()[0], register.to_be_bytes()[1], data];
         self.i2c.write(self.address, &buf).await.map_err(GT911Error::I2C)
     }
 }
@@ -88,27 +93,23 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     /// Returns an error if the device is not ready, if the product ID does not
     /// match, or if any I2C operation fails.
     pub async fn init_async(&mut self) -> Result<(), GT911Error<I2C::Error>> {
-        if !self.query_touch_status_async().await?.is_ready() {
-            // Return that the device is not ready
-            return Err(GT911Error::DeviceNotReady);
-        }
+        command_mode!(self, Touch, {
+            let status = self.status_async_cmd().await?;
+            if !status.is_ready() && status.bits() != 0 {
+                // Return that the device is not ready
+                // NOTE: A `0` most likely indicates the status was written to before.
+                return Err(GT911Error::DeviceNotReady(status));
+            }
 
-        let (id, version) = self.device_info_async().await?;
-        if id == [b'9', b'1', b'1', b'\0'] {
-            Ok(())
-        } else {
-            // Return that the product ID does not match
-            Err(GT911Error::ProductIdMismatch(id, version))
-        }
+            let (id, version) = self.device_info_async_cmd().await?;
+            if id == [b'9', b'1', b'1', b'\0'] {
+                Ok(())
+            } else {
+                // Return that the product ID does not match
+                Err(GT911Error::ProductIdMismatch(id, version))
+            }
+        })
     }
-
-    /// Reset the device.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any I2C operation fails.
-    #[expect(clippy::unused_async, reason = "WIP")]
-    pub async fn device_reset_async(&mut self) -> Result<(), GT911Error<I2C::Error>> { todo!() }
 
     /// Query the device's touch status.
     ///
@@ -118,12 +119,7 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     pub async fn query_touch_status_async(
         &mut self,
     ) -> Result<DetectedTouch, GT911Error<I2C::Error>> {
-        command_mode!(self, Touch, {
-            // Query the status register
-            let mut status = [0u8; 1];
-            self.read_register_async(register::GT911_STATUS, &mut status).await?;
-            Ok(DetectedTouch::from_bits_truncate(status[0]))
-        })
+        command_mode!(self, Touch, { self.status_async_cmd().await })
     }
 
     /// Query the number of active touch points.
@@ -138,6 +134,8 @@ impl<I2C: I2c> GT911<I2C, Touch> {
 
     /// Query a specific touch point's data.
     ///
+    /// Returns `None` if there is no data ready for the point.
+    ///
     /// # Errors
     ///
     /// Returns an error if the point index is invalid (>4),
@@ -145,28 +143,8 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     pub async fn query_touch_async(
         &mut self,
         index: u8,
-    ) -> Result<TouchPoint, GT911Error<I2C::Error>> {
-        // If the index is higher than the number of points, return an error
-        if index > self.query_touch_count_async().await? {
-            return Err(GT911Error::InvalidPoint(index));
-        }
-
-        let register = match index {
-            0 => register::GT911_TOUCH1_TRACK_ID,
-            1 => register::GT911_TOUCH2_TRACK_ID,
-            2 => register::GT911_TOUCH3_TRACK_ID,
-            3 => register::GT911_TOUCH4_TRACK_ID,
-            4 => register::GT911_TOUCH5_TRACK_ID,
-            // Maximum 5 touch points (0-4)
-            _ => unreachable!("Point index out of range"),
-        };
-
-        command_mode!(self, Touch, {
-            // Query the touch point register
-            let mut buf = [0u8; 7];
-            self.read_register_async(register, &mut buf).await?;
-            Ok(TouchPoint::from_bytes(buf))
-        })
+    ) -> Result<Option<TouchPoint>, GT911Error<I2C::Error>> {
+        command_mode!(self, Touch, { self.touch_async_cmd(index).await })
     }
 
     /// Query all active touch points.
@@ -177,13 +155,42 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     pub async fn query_touch_all_async(
         &mut self,
     ) -> Result<[Option<TouchPoint>; 5], GT911Error<I2C::Error>> {
-        let count = self.query_touch_count_async().await?;
-        let mut points = [None, None, None, None, None];
-        for i in 0..count {
-            points[i as usize] = Some(self.query_touch_async(i).await?);
-        }
-        Ok(points)
+        command_mode!(self, Touch, {
+            let status = self.status_async_cmd().await?;
+            let mut points = [None, None, None, None, None];
+            if status.is_ready() {
+                for i in 0..status.touch_count() {
+                    // Determine the register for the touch point
+                    let register = match i {
+                        0 => register::GT911_TOUCH1_TRACK_ID,
+                        1 => register::GT911_TOUCH2_TRACK_ID,
+                        2 => register::GT911_TOUCH3_TRACK_ID,
+                        3 => register::GT911_TOUCH4_TRACK_ID,
+                        4 => register::GT911_TOUCH5_TRACK_ID,
+                        // Maximum 5 touch points (0-4)
+                        #[cfg(feature = "defmt")]
+                        _ => defmt::unreachable!("Point index out of range"),
+                        #[cfg(not(feature = "defmt"))]
+                        _ => unreachable!("Point index out of range"),
+                    };
+
+                    // Query the touch point register
+                    let mut buf = [0u8; 7];
+                    self.read_register_async(register, &mut buf).await?;
+                    points[i as usize] = Some(TouchPoint::from_bytes(buf));
+                }
+            }
+            Ok(points)
+        })
     }
+
+    /// Reset the device.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any I2C operation fails.
+    #[expect(clippy::unused_async, reason = "WIP")]
+    pub async fn device_reset_async(&mut self) -> Result<(), GT911Error<I2C::Error>> { todo!() }
 
     /// Enter gesture mode.
     ///
@@ -210,6 +217,51 @@ impl<I2C: I2c> GT911<I2C, Touch> {
                 Err((GT911 { i2c: gesture.i2c, address: gesture.address, _mode: PhantomData }, err))
             }
         }
+    }
+
+    /// Internal function to query the device's touch status.
+    ///
+    /// Requires the outer function to be in command mode.
+    async fn status_async_cmd(&mut self) -> Result<DetectedTouch, GT911Error<I2C::Error>> {
+        // Query the status register
+        let mut status = [0u8; 1];
+        self.read_register_async(register::GT911_STATUS, &mut status).await?;
+        Ok(DetectedTouch::from_bits_truncate(status[0]))
+    }
+
+    /// Internal function to query a specific touch point's data.
+    ///
+    /// Requires the outer function to be in command mode.
+    async fn touch_async_cmd(
+        &mut self,
+        index: u8,
+    ) -> Result<Option<TouchPoint>, GT911Error<I2C::Error>> {
+        let status = self.status_async_cmd().await?;
+        if !status.is_ready() {
+            // If the device is not ready, return `None`
+            return Ok(None);
+        } else if index > status.touch_count() {
+            // If the index is higher than the number of points, return an error
+            return Err(GT911Error::InvalidPoint(index));
+        }
+
+        let register = match index {
+            0 => register::GT911_TOUCH1_TRACK_ID,
+            1 => register::GT911_TOUCH2_TRACK_ID,
+            2 => register::GT911_TOUCH3_TRACK_ID,
+            3 => register::GT911_TOUCH4_TRACK_ID,
+            4 => register::GT911_TOUCH5_TRACK_ID,
+            // Maximum 5 touch points (0-4)
+            #[cfg(feature = "defmt")]
+            _ => defmt::unreachable!("Point index out of range"),
+            #[cfg(not(feature = "defmt"))]
+            _ => unreachable!("Point index out of range"),
+        };
+
+        // Query the touch point register
+        let mut buf = [0u8; 7];
+        self.read_register_async(register, &mut buf).await?;
+        Ok(Some(TouchPoint::from_bytes(buf)))
     }
 }
 

@@ -82,9 +82,10 @@ impl<I2C: I2c> GT911<I2C, Touch> {
     /// Returns an error if the device is not ready, if the product ID does not
     /// match, or if any I2C operation fails.
     pub fn init(&mut self) -> Result<(), GT911Error<I2C::Error>> {
-        if !self.query_touch_status()?.is_ready() {
+        let status = self.query_touch_status()?;
+        if !status.is_ready() {
             // Return that the device is not ready
-            return Err(GT911Error::DeviceNotReady);
+            return Err(GT911Error::DeviceNotReady(status));
         }
 
         let (id, version) = self.device_info()?;

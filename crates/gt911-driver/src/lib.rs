@@ -82,7 +82,7 @@ mod sealed {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum GT911Error<E> {
     /// The device is not ready.
-    DeviceNotReady,
+    DeviceNotReady(DetectedTouch),
     /// An invalid touch or gesture point was requested.
     InvalidPoint(u8),
     /// Unexpected product ID.
@@ -120,7 +120,6 @@ impl TouchPoint {
 
 bitflags! {
     /// Flags representing the current touch status.
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct DetectedTouch: u8 {
         /// Whether the device is ready.
         const READY_MASK = 0b1000_0000;
@@ -129,7 +128,7 @@ bitflags! {
         /// Whether the proximity sensor is triggered.
         const PROXIMITY_MASK = 0b0010_0000;
         /// Whether the device is being touched.
-        const TOUCH_MASK = 0b0001_0000;
+        const TOUCH_KEY_MASK = 0b0001_0000;
         /// How many touch points are currently detected.
         const TOUCH_POINT_MASK = 0b0000_1111;
     }
@@ -147,10 +146,10 @@ impl DetectedTouch {
     #[must_use]
     pub const fn touch_count(self) -> u8 { self.bits() & DetectedTouch::TOUCH_POINT_MASK.bits() }
 
-    /// Returns `true` if the device is being touched.
+    /// Returns `true` if the device has a touch key pressed.
     #[inline]
     #[must_use]
-    pub const fn is_touched(self) -> bool { self.contains(DetectedTouch::TOUCH_MASK) }
+    pub const fn has_touch_key(self) -> bool { self.contains(DetectedTouch::TOUCH_KEY_MASK) }
 
     /// Returns `true` if a large touch has been detected.
     #[inline]
