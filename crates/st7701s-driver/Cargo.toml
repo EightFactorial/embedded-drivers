@@ -12,6 +12,7 @@ workspace = true
 [dependencies]
 bitflags = { workspace = true }
 defmt = { workspace = true, optional = true }
+display-interface = { workspace = true }
 embedded-graphics-core = { workspace = true, optional = true }
 embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }
