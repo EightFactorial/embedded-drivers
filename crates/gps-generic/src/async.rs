@@ -1,10 +1,15 @@
 use ef_driver_common::mode::Async;
 use embedded_io_async::Read;
 
-use crate::{BufferGuard, GenericGps};
+use crate::{
+    BufferGuard, GenericGps,
+    nmea::{NmeaError, NmeaSentence, parse_sentence},
+};
 
 impl<UART: Read, const N: usize> GenericGps<UART, Async, N> {
-    /// Read a single raw NMEA message from the GPS module.
+    /// Read a raw message from the GPS module.
+    ///
+    /// Returns `None` if a complete message has not yet been received.
     ///
     /// # Errors
     ///
@@ -25,35 +30,37 @@ impl<UART: Read, const N: usize> GenericGps<UART, Async, N> {
         Ok(None)
     }
 
-    /// Attempt to read a single NMEA message from the GPS module.
+    /// Attempt to read a single NMEA sentence from the GPS module.
     ///
-    /// Returns `None` if a complete message has not yet been received.
+    /// Returns `None` if a complete sentence has not yet been received.
     ///
     /// # Errors
     ///
-    /// Returns an error if the UART read operation fails or if the message
+    /// Returns an error if the UART read operation fails or if the sentence
     /// is malformed.
-    pub async fn try_receive_message(&mut self) -> Result<Option<()>, UART::Error> {
-        self.receive_raw().await?.map_or(Ok(None), |_buf| Ok(Some(())))
+    pub async fn try_receive_sentence(
+        &mut self,
+    ) -> Result<Option<NmeaSentence>, NmeaError<UART::Error>> {
+        let sentence = self.receive_raw().await.map_err(NmeaError::Other)?;
+        sentence.map_or(Ok(None), |buffer| parse_sentence(buffer.as_slice()).map(Some))
     }
 
     /// Read a single NMEA message from the GPS module.
     ///
-    /// Repeatedly calls [`GenericGps::try_receive_message`] until a complete
-    /// message is received.
+    /// Repeatedly calls [`GenericGps::try_receive_sentence`] until a complete
+    /// sentence is received.
     ///
     /// # Errors
     ///
-    /// Returns an error if the UART read operation fails or if the message
+    /// Returns an error if the UART read operation fails or if the sentence
     /// is malformed.
-    #[expect(clippy::unit_arg, reason = "WIP")]
-    pub async fn receive_message(&mut self) -> Result<(), UART::Error> {
-        let mut message = None;
-        while message.is_none() {
-            message = self.try_receive_message().await?;
+    pub async fn receive_sentence(&mut self) -> Result<NmeaSentence, NmeaError<UART::Error>> {
+        let mut sentence = None;
+        while sentence.is_none() {
+            sentence = self.try_receive_sentence().await?;
         }
 
         // SAFETY: `message` is guaranteed to be `Some`
-        Ok(unsafe { message.unwrap_unchecked() })
+        Ok(unsafe { sentence.unwrap_unchecked() })
     }
 }

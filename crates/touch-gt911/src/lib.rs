@@ -40,7 +40,7 @@ impl<I2C, MODE> GT911<I2C, MODE> {
     /// Get a mutable reference to the I2C bus.
     #[inline]
     #[must_use]
-    pub fn i2c_mut(&mut self) -> &mut I2C { &mut self.i2c }
+    pub const fn i2c_mut(&mut self) -> &mut I2C { &mut self.i2c }
 
     /// Release the I2C bus.
     #[inline]

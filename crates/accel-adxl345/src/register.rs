@@ -1,0 +1,41 @@
+//! All documented registers from the ADXL345 datasheet.
+#![expect(dead_code, reason = "Not all register values are used")]
+
+macro_rules! register {
+    ($($ident:ident: $addr:expr,)+) => {
+        $(pub(super) const $ident: u8 = $addr;)+
+    };
+}
+
+register! {
+    ADXL345_DEVICE_ID: 0x00,
+    ADXL345_TAP_THRESHOLD: 0x1D,
+    ADXL345_OFFSET_X: 0x1E,
+    ADXL345_OFFSET_Y: 0x1F,
+    ADXL345_OFFSET_Z: 0x20,
+    ADXL345_TAP_DURATION: 0x21,
+    ADXL345_TAP_LATENCY: 0x22,
+    ADXL345_TAP_WINDOW: 0x23,
+    ADXL345_ACTIVITY_THRESHOLD: 0x24,
+    ADXL345_INACTIVITY_THRESHOLD: 0x25,
+    ADXL345_INACTIVITY_TIME: 0x26,
+    ADXL345_INACTIVITY_ENABLE: 0x27,
+    ADXL345_FREEFALL_THRESHOLD: 0x28,
+    ADXL345_FREEFALL_TIME: 0x29,
+    ADXL345_TAP_AXES: 0x2A,
+    ADXL345_TAP_STATUS: 0x2B,
+    ADXL345_BW_RATE: 0x2C,
+    ADXL345_POWER_CTL: 0x2D,
+    ADXL345_INTERRUPT_ENABLE: 0x2E,
+    ADXL345_INTERRUPT_MAP: 0x2F,
+    ADXL345_INTERRUPT_SOURCE: 0x30,
+    ADXL345_DATA_FORMAT: 0x31,
+    ADXL345_DATA_X_LSB: 0x32,
+    ADXL345_DATA_X_MSB: 0x33,
+    ADXL345_DATA_Y_LSB: 0x34,
+    ADXL345_DATA_Y_MSB: 0x35,
+    ADXL345_DATA_Z_LSB: 0x36,
+    ADXL345_DATA_Z_MSB: 0x37,
+    ADXL345_FIFO_CONTROL: 0x38,
+    ADXL345_FIFO_STATUS: 0x39,
+}

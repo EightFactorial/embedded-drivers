@@ -67,7 +67,7 @@ impl<'a> BufferGuard<'a> {
     #[must_use]
     pub(crate) const fn new(buffer: &'a mut [u8], end: usize) -> Self { Self { buffer, end } }
 
-    /// Get the range of the buffer that this guard covers.
+    /// Get the slice of the buffer this guard provides access to.
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[u8] { &self.buffer[..self.end] }

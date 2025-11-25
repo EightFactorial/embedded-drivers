@@ -28,6 +28,7 @@ embedded-io-async = { default-features = false, version = "0.7.0" }
 bitflags = { default-features = false, version = "2.10.0" }
 defmt = { default-features = false, version = "1.0.1" }
 display-interface = { default-features = false, version = "0.5.0" }
+jiff = { default-features = false, version = "0.2.16" }
 
 # --- Workspace Settings ---
 

@@ -15,6 +15,7 @@ embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }
 embedded-io = { workspace = true }
 embedded-io-async = { workspace = true }
+jiff = { workspace = true }
 
 # Optional dependencies
 defmt = { workspace = true, optional = true }

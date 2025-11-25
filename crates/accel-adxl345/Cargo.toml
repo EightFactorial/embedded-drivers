@@ -11,6 +11,7 @@ workspace = true
 
 [dependencies]
 bitflags = { workspace = true }
+ef-driver-common = { workspace = true }
 embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }
 
