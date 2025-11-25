@@ -49,41 +49,11 @@ impl<I2C, MODE: DriverMode> Adxl345<I2C, MODE> {
 
 // -------------------------------------------------------------------------------------------------
 
-#[repr(u8)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[expect(missing_docs, reason = "Self explanatory")]
-pub enum GRange {
-    #[default]
-    Two = 0b00,
-    Four = 0b01,
-    Eight = 0b10,
-    Sixteen = 0b11,
-}
-
-impl GRange {
-    /// Create a [`GRange`] from a byte value.
-    #[must_use]
-    pub const fn from_byte(byte: u8) -> Self {
-        match byte & DataFormat::RANGE_MASK.bits() {
-            0b00 => GRange::Two,
-            0b01 => GRange::Four,
-            0b10 => GRange::Eight,
-            0b11 => GRange::Sixteen,
-            _ => unreachable!(),
-        }
-    }
-}
-
 bitflags! {
     #[cfg_attr(not(feature = "defmt"), derive(Debug, Clone, Copy, PartialEq, Eq))]
-    struct DataFormat: u8 {
-        const SELF_TEST = 0b1000_0000;
-        const SPI_MODE = 0b0100_0000;
-        const INTERRUPT_INVERT = 0b0010_0000;
-        const FULL_RESOLUTION = 0b0000_1000;
-        const JUSTIFY = 0b0000_0100;
-        const RANGE_MASK = 0b0000_0011;
+    struct BWRate: u8 {
+        const LOW_POWER = 0b0001_0000;
+        const RATE_MASK = 0b0000_1111;
     }
 }
 
@@ -109,6 +79,81 @@ pub enum DataRate {
     Hz800 = 0b1101,
     Hz1600 = 0b1110,
     Hz3200 = 0b1111,
+}
+
+impl DataRate {
+    /// Create a [`DataRate`] from a byte value.
+    #[must_use]
+    pub const fn from_byte(byte: u8) -> Self {
+        match byte & BWRate::RATE_MASK.bits() {
+            0b0000 => DataRate::Hz0_10,
+            0b0001 => DataRate::Hz0_20,
+            0b0010 => DataRate::Hz0_39,
+            0b0011 => DataRate::Hz0_78,
+            0b0100 => DataRate::Hz1_56,
+            0b0101 => DataRate::Hz3_13,
+            0b0110 => DataRate::Hz6_25,
+            0b0111 => DataRate::Hz12_5,
+            0b1000 => DataRate::Hz25,
+            0b1001 => DataRate::Hz50,
+            0b1010 => DataRate::Hz100,
+            0b1011 => DataRate::Hz200,
+            0b1100 => DataRate::Hz400,
+            0b1101 => DataRate::Hz800,
+            0b1110 => DataRate::Hz1600,
+            0b1111 => DataRate::Hz3200,
+            _ => unreachable!(),
+        }
+    }
+}
+
+bitflags! {
+    #[cfg_attr(not(feature = "defmt"), derive(Debug, Clone, Copy, PartialEq, Eq))]
+    struct PowerControl: u8 {
+        const LINK = 0b0010_0000;
+        const AUTO_SLEEP = 0b0001_0000;
+        const MEASURE = 0b0000_1000;
+        const SLEEP = 0b0000_0100;
+        const WAKEUP_MASK = 0b0000_0011;
+    }
+}
+
+bitflags! {
+    #[cfg_attr(not(feature = "defmt"), derive(Debug, Clone, Copy, PartialEq, Eq))]
+    struct DataFormat: u8 {
+        const SELF_TEST = 0b1000_0000;
+        const SPI_MODE = 0b0100_0000;
+        const INTERRUPT_INVERT = 0b0010_0000;
+        const FULL_RESOLUTION = 0b0000_1000;
+        const JUSTIFY = 0b0000_0100;
+        const RANGE_MASK = 0b0000_0011;
+    }
+}
+
+#[repr(u8)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[expect(missing_docs, reason = "Self explanatory")]
+pub enum GRange {
+    #[default]
+    Two = 0b00,
+    Four = 0b01,
+    Eight = 0b10,
+    Sixteen = 0b11,
+}
+
+impl GRange {
+    /// Create a [`GRange`] from a byte value.
+    #[must_use]
+    pub const fn from_byte(byte: u8) -> Self {
+        match byte & DataFormat::RANGE_MASK.bits() {
+            0b00 => GRange::Two,
+            0b01 => GRange::Four,
+            0b10 => GRange::Eight,
+            0b11 => GRange::Sixteen,
+            _ => unreachable!(),
+        }
+    }
 }
 
 bitflags! {

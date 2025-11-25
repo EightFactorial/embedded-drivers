@@ -1,7 +1,10 @@
 use ef_driver_common::mode::Blocking;
 use embedded_hal::i2c::I2c;
 
-use crate::{Adxl345, DataFormat, FifoControl, FifoMode, FifoStatus, GRange, register};
+use crate::{
+    Adxl345, BWRate, DataFormat, DataRate, FifoControl, FifoMode, FifoStatus, GRange, PowerControl,
+    register,
+};
 
 impl<I2C: I2c> Adxl345<I2C, Blocking> {
     /// Read the device ID
@@ -54,6 +57,135 @@ impl<I2C: I2c> Adxl345<I2C, Blocking> {
         Ok(())
     }
 
+    /// Get the device's low power mode state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn get_low_power_mode(&mut self) -> Result<bool, I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_BW_RATE, &mut buf)?;
+        let bwrate = BWRate::from_bits_truncate(buf[0]);
+        Ok(bwrate.contains(BWRate::LOW_POWER))
+    }
+
+    /// Set the device's low power mode state.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn set_low_power_mode(&mut self, low_power: bool) -> Result<(), I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_BW_RATE, &mut buf)?;
+        let mut bwrate = BWRate::from_bits_truncate(buf[0]);
+        bwrate.set(BWRate::LOW_POWER, low_power);
+        self.write_register(register::ADXL345_BW_RATE, bwrate.bits())
+    }
+
+    /// Get the device's data rate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn get_data_rate(&mut self) -> Result<DataRate, I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_BW_RATE, &mut buf)?;
+        Ok(DataRate::from_byte(buf[0]))
+    }
+
+    /// Set the device's data rate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn set_data_rate(&mut self, rate: DataRate) -> Result<(), I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_BW_RATE, &mut buf)?;
+        let mut bwrate = BWRate::from_bits_truncate(buf[0]);
+        bwrate.remove(BWRate::RATE_MASK);
+        bwrate.insert(BWRate::from_bits_truncate(rate as u8));
+        self.write_register(register::ADXL345_BW_RATE, bwrate.bits())
+    }
+
+    /// Get whether the device is in link mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn get_link_mode(&mut self) -> Result<bool, I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        Ok(power_ctrl.contains(PowerControl::LINK))
+    }
+
+    /// Set whether the device is in link mode.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn set_link_mode(&mut self, link: bool) -> Result<(), I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let mut power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        power_ctrl.set(PowerControl::LINK, link);
+        self.write_register(register::ADXL345_POWER_CONTROL, power_ctrl.bits())
+    }
+
+    /// Get whether the device has auto sleep enabled.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn get_auto_sleep(&mut self) -> Result<bool, I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        Ok(power_ctrl.contains(PowerControl::AUTO_SLEEP))
+    }
+
+    /// Set whether the device has auto sleep enabled.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn set_auto_sleep(&mut self, auto_sleep: bool) -> Result<(), I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let mut power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        power_ctrl.set(PowerControl::AUTO_SLEEP, auto_sleep);
+        self.write_register(register::ADXL345_POWER_CONTROL, power_ctrl.bits())
+    }
+
+    /// Get whether the device is in standby mode.
+    ///
+    /// This is enabled by default on power up.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn get_standby_mode(&mut self) -> Result<bool, I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        Ok(!power_ctrl.contains(PowerControl::MEASURE))
+    }
+
+    /// Set whether the device is in standby mode.
+    ///
+    /// This is enabled by default on power up.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I2C communication fails
+    pub fn set_standby_mode(&mut self, standby: bool) -> Result<(), I2C::Error> {
+        let mut buf = [0u8; 1];
+        self.read_register(register::ADXL345_POWER_CONTROL, &mut buf)?;
+        let mut power_ctrl = PowerControl::from_bits_truncate(buf[0]);
+        power_ctrl.set(PowerControl::MEASURE, !standby);
+        self.write_register(register::ADXL345_POWER_CONTROL, power_ctrl.bits())
+    }
+
     /// Get whether the device is in full resolution mode.
     ///
     /// When `true`, the output resolution changes based on the selected
@@ -85,11 +217,7 @@ impl<I2C: I2c> Adxl345<I2C, Blocking> {
         let mut buf = [0u8; 1];
         self.read_register(register::ADXL345_DATA_FORMAT, &mut buf)?;
         let mut format = DataFormat::from_bits_truncate(buf[0]);
-        if full_res {
-            format.insert(DataFormat::FULL_RESOLUTION);
-        } else {
-            format.remove(DataFormat::FULL_RESOLUTION);
-        }
+        format.set(DataFormat::FULL_RESOLUTION, full_res);
         self.write_register(register::ADXL345_DATA_FORMAT, format.bits())
     }
 
