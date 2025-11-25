@@ -1,0 +1,28 @@
+[package]
+name = "ef-st7701s"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+bitflags = { workspace = true }
+display-interface = { workspace = true }
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+
+# Optional dependencies
+defmt = { workspace = true, optional = true }
+embedded-graphics-core = { workspace = true, optional = true }
+
+[features]
+default = []
+
+# Enable support for `defmt`
+defmt = ["dep:defmt"]
+# Enable support for `embedded-graphics`
+embedded-graphics = ["dep:embedded-graphics-core"]

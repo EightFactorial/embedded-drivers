@@ -1,5 +1,5 @@
 [package]
-name = "es7210-driver"
+name = "ef-gt911"
 edition = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }
@@ -10,10 +10,13 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
-defmt = { workspace = true, optional = true }
 bitflags = { workspace = true }
+ef-driver-common = { workspace = true }
 embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }
+
+# Optional dependencies
+defmt = { workspace = true, optional = true }
 
 [features]
 default = []

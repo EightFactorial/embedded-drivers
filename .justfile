@@ -9,7 +9,8 @@ clippy:
 
 # Build the project
 build mode="release":
-    cargo build --profile={{mode}}
+    cargo build --workspace --profile={{mode}} --no-default-features
+    cargo build --workspace --profile={{mode}} --features=defmt
 
 # Check all project dependencies
 deny:

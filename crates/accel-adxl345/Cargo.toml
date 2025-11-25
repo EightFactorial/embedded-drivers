@@ -1,0 +1,24 @@
+[package]
+name = "ef-adxl345"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+bitflags = { workspace = true }
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+
+# Optional dependencies
+defmt = { workspace = true, optional = true }
+
+[features]
+default = []
+
+# Enable support for `defmt`
+defmt = ["dep:defmt"]

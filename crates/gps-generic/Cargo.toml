@@ -1,5 +1,5 @@
 [package]
-name = "st7701s-driver"
+name = "ef-gps-generic"
 edition = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }
@@ -10,16 +10,17 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
-bitflags = { workspace = true }
-defmt = { workspace = true, optional = true }
-display-interface = { workspace = true }
-embedded-graphics-core = { workspace = true, optional = true }
+ef-driver-common = { workspace = true }
 embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }
+embedded-io = { workspace = true }
+embedded-io-async = { workspace = true }
+
+# Optional dependencies
+defmt = { workspace = true, optional = true }
 
 [features]
 default = []
 
 # Enable support for `defmt`
 defmt = ["dep:defmt"]
-embedded-graphics = ["dep:embedded-graphics-core"]

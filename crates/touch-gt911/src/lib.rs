@@ -120,6 +120,7 @@ impl TouchPoint {
 
 bitflags! {
     /// Flags representing the current touch status.
+    #[cfg_attr(not(feature = "defmt"), derive(Debug, Clone, Copy, PartialEq, Eq))]
     pub struct DetectedTouch: u8 {
         /// Whether the device is ready.
         const READY_MASK = 0b1000_0000;
@@ -132,7 +133,6 @@ bitflags! {
         /// How many touch points are currently detected.
         const TOUCH_POINT_MASK = 0b0000_1111;
     }
-
 }
 
 impl DetectedTouch {

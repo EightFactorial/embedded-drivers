@@ -1,13 +1,28 @@
 
+# --- Common Crate ---
+
+[package]
+name = "ef-driver-common"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
 # --- Workspace Dependencies ---
 
 [workspace.dependencies]
+ef-driver-common = { path = "", version = "0.0.1" }
+
 # Embassy/Embedded
-embassy-sync = { default-features = false, version = "0.7.2" }
 embedded-graphics-core = { default-features = false, version = "0.4.0" }
 embedded-hal = { default-features = false, version = "1.0.0" }
 embedded-hal-async = { default-features = false, version = "1.0.0" }
-embassy-embedded-hal = { default-features = false, version = "0.5.0" }
+embedded-io = { default-features = false, version = "0.7.0" }
+embedded-io-async = { default-features = false, version = "0.7.0" }
 
 # Other
 bitflags = { default-features = false, version = "2.10.0" }
