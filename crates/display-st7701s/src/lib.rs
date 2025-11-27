@@ -12,7 +12,7 @@ use embedded_hal::{delay::DelayNs, digital::OutputPin};
 pub use mipidsi::interface;
 use mipidsi::{
     Builder, Display,
-    interface::{InterfacePixelFormat, OutputBus, ParallelInterface},
+    interface::{Interface, InterfacePixelFormat},
 };
 
 mod model;
@@ -24,24 +24,13 @@ pub use model::St7701sModel;
 /// [`St7701sModel`] and a [`ParallelInterface`].
 #[repr(transparent)]
 pub struct St7701s<
-    COLOR: DisplayColor + InterfacePixelFormat<BUS::Word>,
-    BUS: OutputBus,
-    DC: OutputPin,
-    WR: OutputPin,
+    COLOR: DisplayColor + InterfacePixelFormat<DI::Word>,
+    DI: Interface,
     RST: OutputPin,
->(Display<ParallelInterface<BUS, DC, WR>, St7701sModel<COLOR>, RST>)
-where
-    BUS::Word: Eq + From<u8>;
+>(Display<DI, St7701sModel<COLOR>, RST>);
 
-impl<
-    COLOR: DisplayColor + InterfacePixelFormat<BUS::Word>,
-    BUS: OutputBus,
-    DC: OutputPin,
-    WR: OutputPin,
-    RST: OutputPin,
-> St7701s<COLOR, BUS, DC, WR, RST>
-where
-    BUS::Word: Eq + From<u8>,
+impl<COLOR: DisplayColor + InterfacePixelFormat<DI::Word>, DI: Interface, RST: OutputPin>
+    St7701s<COLOR, DI, RST>
 {
     /// A wrapper around a [`Builder`] to create a [`St7701s`] display driver.
     ///
@@ -50,48 +39,26 @@ where
     /// This function will panic if the initialization sequence fails.
     #[inline]
     #[must_use]
-    pub fn new<DELAY: DelayNs>(bus: BUS, dc: DC, wr: WR, reset: RST, delay: &mut DELAY) -> Self {
-        Self(
-            Builder::new(St7701sModel(PhantomData), ParallelInterface::new(bus, dc, wr))
-                .reset_pin(reset)
-                .init(delay)
-                .unwrap(),
-        )
+    pub fn new<DELAY: DelayNs>(di: DI, reset: RST, delay: &mut DELAY) -> Self {
+        Self(Builder::new(St7701sModel(PhantomData), di).reset_pin(reset).init(delay).unwrap())
     }
 
     /// Release the inner [`Display`].
     #[inline]
     #[must_use]
-    pub fn release(self) -> Display<ParallelInterface<BUS, DC, WR>, St7701sModel<COLOR>, RST> {
-        self.0
-    }
+    pub fn release(self) -> Display<DI, St7701sModel<COLOR>, RST> { self.0 }
 }
 
-impl<
-    COLOR: DisplayColor + InterfacePixelFormat<BUS::Word>,
-    BUS: OutputBus,
-    DC: OutputPin,
-    WR: OutputPin,
-    RST: OutputPin,
-> Deref for St7701s<COLOR, BUS, DC, WR, RST>
-where
-    BUS::Word: Eq + From<u8>,
+impl<COLOR: DisplayColor + InterfacePixelFormat<DI::Word>, DI: Interface, RST: OutputPin> Deref
+    for St7701s<COLOR, DI, RST>
 {
-    type Target = Display<ParallelInterface<BUS, DC, WR>, St7701sModel<COLOR>, RST>;
+    type Target = Display<DI, St7701sModel<COLOR>, RST>;
 
     #[inline]
     fn deref(&self) -> &Self::Target { &self.0 }
 }
-
-impl<
-    COLOR: DisplayColor + InterfacePixelFormat<BUS::Word>,
-    BUS: OutputBus,
-    DC: OutputPin,
-    WR: OutputPin,
-    RST: OutputPin,
-> DerefMut for St7701s<COLOR, BUS, DC, WR, RST>
-where
-    BUS::Word: Eq + From<u8>,
+impl<COLOR: DisplayColor + InterfacePixelFormat<DI::Word>, DI: Interface, RST: OutputPin> DerefMut
+    for St7701s<COLOR, DI, RST>
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
