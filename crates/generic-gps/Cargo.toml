@@ -1,5 +1,5 @@
 [package]
-name = "ef-gps-generic"
+name = "ef-generic-gps"
 edition = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }
@@ -11,8 +11,6 @@ workspace = true
 
 [dependencies]
 ef-driver-common = { workspace = true }
-embedded-hal = { workspace = true }
-embedded-hal-async = { workspace = true }
 embedded-io = { workspace = true }
 embedded-io-async = { workspace = true }
 jiff = { workspace = true }

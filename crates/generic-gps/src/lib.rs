@@ -3,6 +3,7 @@
 
 use core::{marker::PhantomData, ops::Deref};
 
+pub use ef_driver_common::mode;
 use ef_driver_common::mode::DriverMode;
 
 mod r#async;

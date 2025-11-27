@@ -7,6 +7,7 @@ use core::marker::PhantomData;
 use bitflags::bitflags;
 #[cfg(feature = "defmt")]
 use defmt::bitflags;
+pub use ef_driver_common::mode;
 use ef_driver_common::mode::DriverMode;
 
 mod r#async;

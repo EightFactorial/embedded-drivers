@@ -10,19 +10,17 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
-bitflags = { workspace = true }
-display-interface = { workspace = true }
+ef-driver-common = { workspace = true, features = ["color"] }
 embedded-hal = { workspace = true }
-embedded-hal-async = { workspace = true }
+mipidsi = { workspace = true }
 
 # Optional dependencies
 defmt = { workspace = true, optional = true }
-embedded-graphics-core = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["batch"]
 
 # Enable support for `defmt`
 defmt = ["dep:defmt"]
-# Enable support for `embedded-graphics`
-embedded-graphics = ["dep:embedded-graphics-core"]
+# Enable draw batching support
+batch = ["mipidsi/batch"]
