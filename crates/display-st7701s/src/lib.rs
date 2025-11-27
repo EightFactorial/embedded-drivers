@@ -9,6 +9,7 @@ use core::{
 pub use ef_driver_common::color;
 use ef_driver_common::color::DisplayColor;
 use embedded_hal::{delay::DelayNs, digital::OutputPin};
+pub use mipidsi::interface;
 use mipidsi::{
     Builder, Display,
     interface::{InterfacePixelFormat, OutputBus, ParallelInterface},
