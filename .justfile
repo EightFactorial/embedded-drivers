@@ -18,8 +18,10 @@ deny:
 
 # Run all workspace tests
 test:
-    cargo test --workspace --no-default-features
-    cargo test --workspace --features=defmt
+    cargo nextest run --no-tests=pass --workspace --no-default-features
+    cargo nextest run --no-tests=pass --workspace --features=defmt
+    cargo test --doc --workspace --no-default-features
+    cargo test --doc --workspace --features=defmt
 
 # Check all files for typos
 typos:

@@ -14,7 +14,7 @@ mod r#async;
 mod blocking;
 mod register;
 
-/// A driver for a ADXL345 accelerometer.
+/// A driver for an ADXL345 accelerometer.
 pub struct Adxl345<I2C, MODE: DriverMode> {
     i2c: I2C,
     address: u8,
